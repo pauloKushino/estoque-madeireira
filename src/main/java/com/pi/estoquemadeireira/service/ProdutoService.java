@@ -26,8 +26,11 @@ public class ProdutoService {
     }
 
     @Transactional(readOnly = true)
-    public List<ProdutoResponseDTO> listar() {
-        return produtoRepository.findAll().stream()
+    public List<ProdutoResponseDTO> listar(String nome) {
+        List<Produto> produtos = (nome == null || nome.isBlank())
+                ? produtoRepository.findAll()
+                : produtoRepository.findByNomeContainingIgnoreCase(nome);
+        return produtos.stream()
                 .map(ProdutoMapper::toResponse)
                 .toList();
     }
