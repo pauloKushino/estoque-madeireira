@@ -8,6 +8,7 @@ import com.pi.estoquemadeireira.entity.ItemVenda;
 import com.pi.estoquemadeireira.entity.Produto;
 import com.pi.estoquemadeireira.entity.Venda;
 import com.pi.estoquemadeireira.exception.EstoqueInsuficienteException;
+import com.pi.estoquemadeireira.repository.ClienteRepository;
 import com.pi.estoquemadeireira.repository.ProdutoRepository;
 import com.pi.estoquemadeireira.repository.VendaRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -26,10 +27,13 @@ public class VendaService {
 
     private final VendaRepository vendaRepository;
     private final ProdutoRepository produtoRepository;
+    private final ClienteRepository clienteRepository;
 
-    public VendaService(VendaRepository vendaRepository, ProdutoRepository produtoRepository) {
+    public VendaService(VendaRepository vendaRepository, ProdutoRepository produtoRepository,
+                        ClienteRepository clienteRepository) {
         this.vendaRepository = vendaRepository;
         this.produtoRepository = produtoRepository;
+        this.clienteRepository = clienteRepository;
     }
 
     @Transactional(readOnly = true)
@@ -47,6 +51,12 @@ public class VendaService {
     @Transactional
     public VendaResponseDTO criar(VendaRequestDTO dto) {
         log.info("Iniciando venda: clienteId={}, itens={}", dto.clienteId(), dto.itens().size());
+
+        // Sem essa validacao, um clienteId inexistente so seria rejeitado pela FK do banco (erro 500)
+        if (!clienteRepository.existsById(dto.clienteId())) {
+            log.warn("Venda rejeitada: cliente inexistente, clienteId={}", dto.clienteId());
+            throw new EntityNotFoundException("Cliente nao encontrado: id " + dto.clienteId());
+        }
 
         Venda venda = new Venda();
         venda.setClienteId(dto.clienteId());
